@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geoip
+spec:
+  selector:
+    matchLabels:
+      app: geoip
+  template:
+    metadata:
+      labels:
+        app: geoip
+    spec:
+      containers:
+      - name: geoip
+        image: shahenshah99/geolocator:latest
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5000
+          name: web
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: geoip
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: geoip.mihirs.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: geoip
+            port:
+              name: web
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: geoip
+spec:
+  ports:
+  - name: web
+    port: 80
+  selector:
+    name: geoip
+---
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+  name: nginx-example
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: k8s.io/ingress-nginx
